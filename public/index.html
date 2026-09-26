@@ -1,0 +1,43 @@
+// Add this inside the <script> of public/index.html:
+
+function syncWithCloudflareBackend() {
+  // Only auto-fetch if served over HTTP/HTTPS (not file:///)
+  if (!window.location.protocol.startsWith('http')) return;
+
+  fetch('/api/state')
+    .then(res => res.json())
+    .then(data => {
+      if (!data || !data.barrier) return;
+      
+      // Update barrier status
+      state.isClosed = data.barrier.isClosed;
+      state.secondsToClosure = data.barrier.secondsToClosure;
+      state.secondsRemainingDown = data.barrier.secondsRemainingDown;
+      state.secondsElapsedDown = data.barrier.secondsElapsedDown;
+      state.secondsNextAfterOpen = data.barrier.secondsNextAfterOpen;
+
+      document.getElementById('row1Val').textContent = data.barrier.primaryService;
+      document.getElementById('row2Val').textContent = data.barrier.serviceProfile;
+
+      // Update Environmental
+      if (data.environmental) {
+        const env = data.environmental;
+        document.getElementById('teleWeather').textContent = `${env.temp}°C (Feels ${env.feelsLike}°C)`;
+        document.getElementById('teleRain').textContent = env.rainMm > 0 ? `${env.rainMm}mm rain` : "Dry (0mm)";
+        document.getElementById('teleAqi').textContent = `AQI ${env.aqi}`;
+      }
+
+      // Update Traffic
+      if (data.traffic) {
+        document.getElementById('speedTomTom').textContent = `${data.traffic.currentMph} mph`;
+        document.getElementById('trafficState').textContent = data.traffic.state;
+      }
+
+      updateUI();
+    })
+    .catch(err => console.log("Using local simulation engine fallback", err));
+}
+
+// Poll Cloudflare API every 20 seconds when online
+setInterval(syncWithCloudflareBackend, 20000);
+syncWithCloudflareBackend();
