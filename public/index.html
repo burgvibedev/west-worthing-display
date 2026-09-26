@@ -1,43 +1,203 @@
-// Add this inside the <script> of public/index.html:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>West Worthing Crossing — 800x480</title>
+  <style>
+    :root {
+      --bg: #e4e2dc;
+      --epaper-white: #f8f7f2;
+      --epaper-black: #111111;
+      --epaper-gray: #666666;
+      --epaper-lightgray: #eae8e1;
+      --border-thick: 3px solid #111111;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+    body { background-color: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 14px; color: #222; }
+    h1 { font-size: 0.9rem; margin-bottom: 8px; color: #333; font-weight: 700; }
+    .screen-bezel { background: #1a1a1a; padding: 14px 18px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+    #epaper-display { width: 800px; height: 480px; background-color: var(--epaper-white); color: var(--epaper-black); position: relative; overflow: hidden; display: flex; flex-direction: column; border: 1px solid #aaa; }
+    .epaper-header { height: 42px; border-bottom: var(--border-thick); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; font-weight: 800; }
+    .crossing-id { font-size: 14px; letter-spacing: 0.5px; }
+    .clock-display { font-size: 19px; font-family: monospace; font-weight: 700; }
+    .telemetry-strip { height: 40px; border-bottom: 2px solid var(--epaper-black); background: var(--epaper-lightgray); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; font-size: 12.5px; font-weight: 700; }
+    .tele-item { display: flex; align-items: center; gap: 4px; }
+    .tele-tag { font-size: 10px; text-transform: uppercase; color: var(--epaper-gray); font-weight: 800; }
+    .epaper-main { flex: 1; display: flex; padding: 14px 20px; gap: 20px; }
+    .hero-col { width: 350px; display: flex; flex-direction: column; justify-content: space-between; border-right: 2px dashed var(--epaper-gray); padding-right: 20px; }
+    .status-badge { display: inline-block; padding: 6px 14px; font-size: 20px; font-weight: 900; letter-spacing: 1.2px; text-transform: uppercase; border: var(--border-thick); }
+    .status-badge.open { background: var(--epaper-white); color: var(--epaper-black); }
+    .status-badge.closed { background: var(--epaper-black); color: var(--epaper-white); }
+    .metric-caption { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--epaper-gray); margin-top: 8px; }
+    .countdown-timer { font-size: 36px; font-weight: 900; line-height: 1.1; letter-spacing: -0.5px; margin: 4px 0 10px 0; white-space: nowrap; }
+    .recommendation-box { border: var(--border-thick); padding: 10px 12px; background: var(--epaper-white); }
+    .rec-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--epaper-gray); display: block; margin-bottom: 2px; }
+    .rec-action { font-size: 17px; font-weight: 900; line-height: 1.2; }
+    .details-col { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+    .info-card { background: var(--epaper-lightgray); border-left: 5px solid var(--epaper-black); padding: 10px 12px; }
+    .info-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
+    .info-value { font-size: 18px; font-weight: 800; line-height: 1.2; }
+    .breakdown-row { display: flex; justify-content: space-between; border-bottom: 1px solid #ccc; padding: 6px 0; font-size: 13px; }
+    .breakdown-row:last-child { border-bottom: none; }
+    .breakdown-label { font-weight: 600; color: #444; }
+    .breakdown-data { font-weight: 800; text-align: right; }
+    .track-schematic { border: 1px solid #999; background: #f0eee8; padding: 6px 10px; font-size: 11px; font-family: monospace; }
+    .track-title { font-weight: 800; margin-bottom: 3px; font-size: 10px; text-transform: uppercase; }
+    .track-line { display: flex; justify-content: space-between; align-items: center; margin: 2px 0; }
+    .epaper-footer { height: 42px; border-top: 2px solid var(--epaper-black); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; font-size: 12px; font-weight: 700; background: var(--epaper-white); }
+    .speed-badge { display: inline-flex; align-items: center; gap: 5px; background: var(--epaper-lightgray); padding: 3px 8px; border: 1px solid #888; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <h1>WEST WORTHING LEVEL CROSSING (CLOUD ENGINE 800x480)</h1>
+  <div class="screen-bezel">
+    <div id="epaper-display">
+      <div class="epaper-header">
+        <span class="crossing-id">WEST WORTHING LC • SOUTH ST / TARRING RD</span>
+        <span class="clock-display" id="clock">--:--:--</span>
+      </div>
+      <div class="telemetry-strip">
+        <div class="tele-item"><span class="tele-tag">TEMP:</span><span id="teleWeather">--°C (Feels --°C)</span></div>
+        <div class="tele-item"><span class="tele-tag">WIND:</span><span id="teleWind">-- mph --</span></div>
+        <div class="tele-item"><span class="tele-tag">RAIN:</span><span id="teleRain">0% (0.0mm)</span></div>
+        <div class="tele-item"><span class="tele-tag">AIR:</span><span id="teleAqi">Good (AQI --)</span></div>
+      </div>
+      <div class="epaper-main">
+        <div class="hero-col">
+          <div>
+            <div id="statusBadge" class="status-badge open">BARRIERS RAISED</div>
+            <div class="main-metric">
+              <div id="metricCaption" class="metric-caption">Barriers lowering in:</div>
+              <div id="mainTimer" class="countdown-timer">4 mins 30 secs</div>
+            </div>
+          </div>
+          <div class="recommendation-box">
+            <span class="rec-tag">Commute Recommendation</span>
+            <div id="recText" class="rec-action">[ROAD] DIRECT CROSSING CLEAR</div>
+          </div>
+        </div>
+        <div class="details-col">
+          <div class="info-card">
+            <div id="cardTitle" class="info-title">Anticipated Barrier Downtime</div>
+            <div id="cardValue" class="info-value">2 mins 45 secs</div>
+          </div>
+          <div class="timing-breakdown">
+            <div class="breakdown-row"><span class="breakdown-label">Approaching Service</span><span class="breakdown-data" id="row1Val">Southern West Coastway</span></div>
+            <div class="breakdown-row"><span class="breakdown-label">Service Profile</span><span class="breakdown-data" id="row2Val">Stopping (P1 Dwell)</span></div>
+            <div class="breakdown-row"><span class="breakdown-label">Subsequent Free Window</span><span class="breakdown-data" id="row3Val">Open for ~14 mins</span></div>
+          </div>
+          <div class="track-schematic">
+            <div class="track-title">Live Track Position (Three Bridges ROC)</div>
+            <div class="track-line"><span>[Down: Westbound]</span><span id="trackDown">Worthing (TB1124) >>> [LC] >>> Durrington</span></div>
+            <div class="track-line"><span>[Up: Eastbound]</span><span id="trackUp">Goring >>> [LC] >>> Worthing (TB1121)</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="epaper-footer">
+        <div style="display:flex; gap:10px; align-items:center;">
+          <span style="color:var(--epaper-gray); font-size:11px;">TRAFFIC SPEED:</span>
+          <div class="speed-badge"><span style="font-size:10px; color:#555;">South St:</span><span id="speedTomTom" style="font-weight:900;">23 mph</span></div>
+          <div class="speed-badge"><span style="font-size:10px; color:#555;">State:</span><span id="trafficState" style="font-weight:900;">Free Flow</span></div>
+        </div>
+        <div><span style="color:var(--epaper-gray);">GEAR:</span> <span id="gearAdvice">Checking live weather...</span></div>
+      </div>
+    </div>
+  </div>
 
-function syncWithCloudflareBackend() {
-  // Only auto-fetch if served over HTTP/HTTPS (not file:///)
-  if (!window.location.protocol.startsWith('http')) return;
+  <script>
+    var state = { isClosed: false, secondsToClosure: 270, secondsElapsedDown: 0, secondsRemainingDown: 165, secondsNextAfterOpen: 840 };
 
-  fetch('/api/state')
-    .then(res => res.json())
-    .then(data => {
-      if (!data || !data.barrier) return;
-      
-      // Update barrier status
-      state.isClosed = data.barrier.isClosed;
-      state.secondsToClosure = data.barrier.secondsToClosure;
-      state.secondsRemainingDown = data.barrier.secondsRemainingDown;
-      state.secondsElapsedDown = data.barrier.secondsElapsedDown;
-      state.secondsNextAfterOpen = data.barrier.secondsNextAfterOpen;
+    function formatHumanReadable(s) {
+      s = Math.max(0, Math.floor(s));
+      var m = Math.floor(s / 60);
+      var remS = s % 60;
+      if (m > 0 && remS > 0) return m + (m === 1 ? " min " : " mins ") + remS + (remS === 1 ? " sec" : " secs");
+      if (m > 0 && remS === 0) return m + (m === 1 ? " min" : " mins");
+      return remS + (remS === 1 ? " sec" : " secs");
+    }
 
-      document.getElementById('row1Val').textContent = data.barrier.primaryService;
-      document.getElementById('row2Val').textContent = data.barrier.serviceProfile;
+    function degreesToCompass(deg) {
+      var arr = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
+      return arr[(Math.floor((deg / 22.5) + 0.5) % 16)];
+    }
 
-      // Update Environmental
-      if (data.environmental) {
-        const env = data.environmental;
-        document.getElementById('teleWeather').textContent = `${env.temp}°C (Feels ${env.feelsLike}°C)`;
-        document.getElementById('teleRain').textContent = env.rainMm > 0 ? `${env.rainMm}mm rain` : "Dry (0mm)";
-        document.getElementById('teleAqi').textContent = `AQI ${env.aqi}`;
+    function updateUI() {
+      var now = new Date();
+      document.getElementById('clock').textContent = String(now.getHours()).padStart(2,'0') + ":" + String(now.getMinutes()).padStart(2,'0') + ":" + String(now.getSeconds()).padStart(2,'0');
+
+      var statusBadge = document.getElementById('statusBadge');
+      var metricCaption = document.getElementById('metricCaption');
+      var mainTimer = document.getElementById('mainTimer');
+      var recText = document.getElementById('recText');
+      var cardTitle = document.getElementById('cardTitle');
+      var cardValue = document.getElementById('cardValue');
+
+      if (!state.isClosed) {
+        statusBadge.textContent = "BARRIERS RAISED";
+        statusBadge.className = "status-badge open";
+        metricCaption.textContent = "BARRIERS LOWERING IN:";
+        mainTimer.textContent = formatHumanReadable(state.secondsToClosure);
+        cardTitle.textContent = "Anticipated Downtime When Lowered";
+        cardValue.textContent = formatHumanReadable(state.secondsRemainingDown);
+        recText.textContent = state.secondsToClosure > 90 ? "[ROAD] DIRECT CROSSING CLEAR" : "[!] HURRY OR DIVERT TO BRIDGE";
+      } else {
+        statusBadge.textContent = "BARRIERS DOWN";
+        statusBadge.className = "status-badge closed";
+        metricCaption.textContent = "EST. REMAINING WAIT:";
+        mainTimer.textContent = formatHumanReadable(state.secondsRemainingDown);
+        cardTitle.textContent = "Barrier Closure Duration";
+        cardValue.textContent = formatHumanReadable(state.secondsElapsedDown) + " elapsed";
+        recText.textContent = state.secondsRemainingDown > 85 ? "[BRIDGE] CLIMB FOOTBRIDGE (Faster)" : "[WAIT] WAIT AT BARRIER (Opening soon)";
       }
+    }
 
-      // Update Traffic
-      if (data.traffic) {
-        document.getElementById('speedTomTom').textContent = `${data.traffic.currentMph} mph`;
-        document.getElementById('trafficState').textContent = data.traffic.state;
+    function fetchLiveEnvironment() {
+      // West Worthing coordinates: 50.822, -0.384
+      fetch("https://api.open-meteo.com/v1/forecast?latitude=50.822&longitude=-0.384&current=temperature_2m,apparent_temperature,precipitation,wind_speed_10m,wind_direction_10m&wind_speed_unit=mph")
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (!d || !d.current) return;
+          var cur = d.current;
+          var temp = Math.round(cur.temperature_2m);
+          var feels = Math.round(cur.apparent_temperature);
+          var wind = Math.round(cur.wind_speed_10m);
+          var dir = degreesToCompass(cur.wind_direction_10m);
+          var rain = cur.precipitation;
+
+          document.getElementById('teleWeather').textContent = temp + "°C (Feels " + feels + "°C)";
+          document.getElementById('teleWind').textContent = wind + " mph " + dir;
+          document.getElementById('teleRain').textContent = rain > 0 ? rain + "mm rain" : "Dry (0mm)";
+
+          var gear = document.getElementById('gearAdvice');
+          if (feels <= 4) gear.textContent = "Thermal Base + Winter Jacket + Gloves";
+          else if (feels <= 9) gear.textContent = "2 Layers + Windbreaker Jacket";
+          else if (feels <= 14) gear.textContent = "Long Sleeve + Light Windbreaker";
+          else gear.textContent = "Single Light Layer";
+        }).catch(function() {});
+
+      fetch("https://air-quality-api.open-meteo.com/v1/air-quality?latitude=50.822&longitude=-0.384&current=european_aqi")
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (d && d.current) document.getElementById('teleAqi').textContent = "AQI " + d.current.european_aqi;
+        }).catch(function() {});
+    }
+
+    function tick() {
+      if (!state.isClosed) {
+        if (state.secondsToClosure > 0) state.secondsToClosure--;
+        else { state.isClosed = true; state.secondsElapsedDown = 0; }
+      } else {
+        state.secondsElapsedDown++;
+        if (state.secondsRemainingDown > 0) state.secondsRemainingDown--;
+        else { state.isClosed = false; state.secondsToClosure = state.secondsNextAfterOpen; }
       }
-
       updateUI();
-    })
-    .catch(err => console.log("Using local simulation engine fallback", err));
-}
+    }
 
-// Poll Cloudflare API every 20 seconds when online
-setInterval(syncWithCloudflareBackend, 20000);
-syncWithCloudflareBackend();
+    updateUI();
+    fetchLiveEnvironment();
+    setInterval(tick, 1000);
+    setInterval(fetchLiveEnvironment, 10 * 60 * 1000);
+  </script>
+</body>
+</html>
