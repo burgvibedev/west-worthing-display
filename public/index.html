@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>West Worthing Crossing — 800x480</title>
+  <title>West Worthing Crossing & Commute Dashboard (800x480)</title>
   <style>
     :root {
       --bg: #e4e2dc;
@@ -15,6 +15,25 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
     body { background-color: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 14px; color: #222; }
     h1 { font-size: 0.9rem; margin-bottom: 8px; color: #333; font-weight: 700; }
+    
+    /* Toolbar & Settings Drawer (PC only) */
+    .toolbar {
+      background: white; padding: 8px 14px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    }
+    .btn { background: #222; color: white; border: 1px solid #222; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600; }
+    .btn:hover { background: #444; }
+    .btn.active { background: #0066cc; }
+
+    #settingsDrawer {
+      display: none; background: white; border: 1px solid #ccc; padding: 12px 16px; border-radius: 6px;
+      margin-bottom: 12px; width: 800px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); font-size: 12px;
+    }
+    .input-row { display: flex; gap: 12px; align-items: center; margin-top: 6px; }
+    .input-row label { font-weight: 700; width: 140px; }
+    .input-row input { flex: 1; padding: 5px 8px; border: 1px solid #aaa; border-radius: 4px; font-family: monospace; font-size: 11px; }
+
+    /* The exact 800x480 Physical E-Ink Screen */
     .screen-bezel { background: #1a1a1a; padding: 14px 18px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
     #epaper-display { width: 800px; height: 480px; background-color: var(--epaper-white); color: var(--epaper-black); position: relative; overflow: hidden; display: flex; flex-direction: column; border: 1px solid #aaa; }
     .epaper-header { height: 42px; border-bottom: var(--border-thick); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; font-weight: 800; }
@@ -49,7 +68,32 @@
   </style>
 </head>
 <body>
-  <h1>WEST WORTHING LEVEL CROSSING (CLOUD ENGINE 800x480)</h1>
+  <h1>WEST WORTHING LEVEL CROSSING & COMMUTER BOARD (800x480)</h1>
+
+  <!-- Control Toolbar -->
+  <div class="toolbar">
+    <button class="btn" onclick="toggleSettings()">⚙️ Configure API Keys</button>
+    <span style="border-left: 1px solid #ccc; height: 16px; margin: 0 4px;"></span>
+    <span style="font-size: 11px; color: #555;" id="apiStatusBadge">Connecting live feeds...</span>
+  </div>
+
+  <!-- Settings Drawer for API Keys -->
+  <div id="settingsDrawer">
+    <strong>API Key Configuration (Stored securely in your local browser):</strong>
+    <div class="input-row">
+      <label>Darwin Access Key:</label>
+      <input type="text" id="inputDarwinKey" placeholder="Paste your 36-char National Rail token" />
+    </div>
+    <div class="input-row">
+      <label>TomTom API Key:</label>
+      <input type="text" id="inputTomTomKey" placeholder="Paste your TomTom API key" />
+    </div>
+    <div style="margin-top: 10px; text-align: right;">
+      <button class="btn" onclick="saveKeysAndConnect()">Save Keys & Connect Live</button>
+    </div>
+  </div>
+
+  <!-- 800x480 Screen -->
   <div class="screen-bezel">
     <div id="epaper-display">
       <div class="epaper-header">
@@ -82,8 +126,8 @@
             <div id="cardValue" class="info-value">2 mins 45 secs</div>
           </div>
           <div class="timing-breakdown">
-            <div class="breakdown-row"><span class="breakdown-label">Approaching Service</span><span class="breakdown-data" id="row1Val">Southern West Coastway</span></div>
-            <div class="breakdown-row"><span class="breakdown-label">Service Profile</span><span class="breakdown-data" id="row2Val">Stopping (P1 Dwell)</span></div>
+            <div class="breakdown-row"><span class="breakdown-label">Approaching Service</span><span class="breakdown-data" id="row1Val">Loading Live Darwin...</span></div>
+            <div class="breakdown-row"><span class="breakdown-label">Service Profile</span><span class="breakdown-data" id="row2Val">Platform 1 Dwell</span></div>
             <div class="breakdown-row"><span class="breakdown-label">Subsequent Free Window</span><span class="breakdown-data" id="row3Val">Open for ~14 mins</span></div>
           </div>
           <div class="track-schematic">
@@ -95,9 +139,9 @@
       </div>
       <div class="epaper-footer">
         <div style="display:flex; gap:10px; align-items:center;">
-          <span style="color:var(--epaper-gray); font-size:11px;">TRAFFIC SPEED:</span>
-          <div class="speed-badge"><span style="font-size:10px; color:#555;">South St:</span><span id="speedTomTom" style="font-weight:900;">23 mph</span></div>
-          <div class="speed-badge"><span style="font-size:10px; color:#555;">State:</span><span id="trafficState" style="font-weight:900;">Free Flow</span></div>
+          <span style="color:var(--epaper-gray); font-size:11px;">SOUTH ST TRAFFIC:</span>
+          <div class="speed-badge"><span style="font-size:10px; color:#555;">TomTom GPS:</span><span id="speedTomTom" style="font-weight:900;">-- mph</span></div>
+          <div class="speed-badge"><span style="font-size:10px; color:#555;">State:</span><span id="trafficState" style="font-weight:900;">--</span></div>
         </div>
         <div><span style="color:var(--epaper-gray);">GEAR:</span> <span id="gearAdvice">Checking live weather...</span></div>
       </div>
@@ -105,7 +149,24 @@
   </div>
 
   <script>
-    var state = { isClosed: false, secondsToClosure: 270, secondsElapsedDown: 0, secondsRemainingDown: 165, secondsNextAfterOpen: 840 };
+    var state = { isClosed: false, secondsToClosure: 240, secondsElapsedDown: 0, secondsRemainingDown: 165, secondsNextAfterOpen: 840 };
+    var darwinKey = localStorage.getItem('ww_darwin_key') || '';
+    var tomtomKey = localStorage.getItem('ww_tomtom_key') || '';
+
+    function toggleSettings() {
+      var d = document.getElementById('settingsDrawer');
+      d.style.display = (d.style.display === 'block' ? 'none' : 'block');
+    }
+
+    function saveKeysAndConnect() {
+      darwinKey = document.getElementById('inputDarwinKey').value.trim();
+      tomtomKey = document.getElementById('inputTomTomKey').value.trim();
+      localStorage.setItem('ww_darwin_key', darwinKey);
+      localStorage.setItem('ww_tomtom_key', tomtomKey);
+      toggleSettings();
+      fetchLiveTrains();
+      fetchLiveTomTom();
+    }
 
     function formatHumanReadable(s) {
       s = Math.max(0, Math.floor(s));
@@ -151,8 +212,8 @@
       }
     }
 
+    // 1. Live Weather from Open-Meteo
     function fetchLiveEnvironment() {
-      // West Worthing coordinates: 50.822, -0.384
       fetch("https://api.open-meteo.com/v1/forecast?latitude=50.822&longitude=-0.384&current=temperature_2m,apparent_temperature,precipitation,wind_speed_10m,wind_direction_10m&wind_speed_unit=mph")
         .then(function(r) { return r.json(); })
         .then(function(d) {
@@ -182,6 +243,78 @@
         }).catch(function() {});
     }
 
+    // 2. Live TomTom Traffic on South Street
+    function fetchLiveTomTom() {
+      if (!tomtomKey) {
+        document.getElementById('speedTomTom').textContent = "23 mph";
+        document.getElementById('trafficState').textContent = "Modelled";
+        return;
+      }
+      var url = "https://api.tomtom.com/traffic/services/4/flowSegmentData/relative0/10/json?point=50.82255,-0.38386&unit=mph&key=" + encodeURIComponent(tomtomKey);
+      fetch(url)
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (!d || !d.flowSegmentData) return;
+          var flow = d.flowSegmentData;
+          var curMph = Math.round(flow.currentSpeed);
+          var freeMph = Math.round(flow.freeFlowSpeed);
+
+          document.getElementById('speedTomTom').textContent = curMph + " mph";
+          var stateElem = document.getElementById('trafficState');
+          if (curMph <= 4) stateElem.textContent = "Stopped (Queuing)";
+          else if (curMph < freeMph * 0.6) stateElem.textContent = "Slow Traffic";
+          else stateElem.textContent = "Free Flow";
+        }).catch(function() {});
+    }
+
+    // 3. Live Darwin Departures for West Worthing (WWO)
+    function fetchLiveTrains() {
+      var url = "https://huxley2.azurewebsites.net/departures/WWO/5";
+      if (darwinKey) {
+        url += "?accessToken=" + encodeURIComponent(darwinKey);
+      }
+
+      fetch(url)
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (!d || !d.trainServices || d.trainServices.length === 0) {
+            document.getElementById('apiStatusBadge').textContent = "Live: Schedule synced";
+            return;
+          }
+          document.getElementById('apiStatusBadge').textContent = "Live: Darwin connected";
+          var nextTrain = d.trainServices[0];
+          var dest = nextTrain.destination ? nextTrain.destination[0].locationName : "Coast";
+          document.getElementById('row1Val').textContent = nextTrain.std + " " + nextTrain.operator + " to " + dest;
+
+          var platform = nextTrain.platform || '1';
+          document.getElementById('row2Val').textContent = (platform === '1' ? "Westbound (Platform 1 Dwell)" : "Eastbound (Platform 2)");
+
+          // Arrival delta
+          var now = new Date();
+          var parts = (nextTrain.std || "12:00").split(':');
+          var trainTime = new Date(now);
+          trainTime.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
+
+          var diffSeconds = Math.round((trainTime.getTime() - now.getTime()) / 1000);
+          var signallerLead = 80;
+
+          if (diffSeconds <= signallerLead && diffSeconds > -150) {
+            state.isClosed = true;
+            state.secondsElapsedDown = signallerLead - diffSeconds;
+            state.secondsRemainingDown = Math.max(0, 165 - state.secondsElapsedDown);
+            state.secondsToClosure = 0;
+          } else if (diffSeconds > signallerLead) {
+            state.isClosed = false;
+            state.secondsToClosure = diffSeconds - signallerLead;
+            state.secondsRemainingDown = 165;
+          }
+          updateUI();
+        })
+        .catch(function() {
+          document.getElementById('apiStatusBadge').textContent = "Schedule fallback";
+        });
+    }
+
     function tick() {
       if (!state.isClosed) {
         if (state.secondsToClosure > 0) state.secondsToClosure--;
@@ -194,10 +327,19 @@
       updateUI();
     }
 
+    // Populate saved keys into inputs if present
+    if (darwinKey) document.getElementById('inputDarwinKey').value = darwinKey;
+    if (tomtomKey) document.getElementById('inputTomTomKey').value = tomtomKey;
+
     updateUI();
     fetchLiveEnvironment();
+    fetchLiveTomTom();
+    fetchLiveTrains();
+
     setInterval(tick, 1000);
     setInterval(fetchLiveEnvironment, 10 * 60 * 1000);
+    setInterval(fetchLiveTomTom, 60 * 1000);
+    setInterval(fetchLiveTrains, 25 * 1000);
   </script>
 </body>
 </html>
